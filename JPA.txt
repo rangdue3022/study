@@ -1,0 +1,161 @@
+-----------------------------jpa-----------------------------
+
+* 관계형데이터베이스
+: 테이블 연관관계 외래키 주키 등등 
+: 데이터식별, 무결성확인
+
+* JDBC
+: DB java 연결 
+
+* 영속화
+
+* 영속화
+DDL : Definition 정의
+DML : Manipulation 데이터조작
+
+* 기존
+테이블생성
+테이블에서 꺼낸 데이터를 도메인에 클래스와 매핑 (result type매핑 등등)
+커낵션비용비쌈
+데이터베이스바뀌면 쿼리 변경해야됨
+필요할때만 데이터 조회
+
+Springboot는 connection을 히카리사용
+
+* ORM (hibernate orm툴)
+jdbc기반(Connection, pool) 사용안하고 domain기반 개발한 객체를 자동 데이터베이스에 영속화
+mapping정보를 기술한 metadata 기반으로 java객체와 db테이블을 매핑해서 깔끔하게 영속화시켜주는 기술
+Vendor 독립성
+
+* 설정
+entitymanager가 jpa의 스펙, hibernate사용 
+connection pool도 db를 알아야 설정 -> datasource url정보 설정 (application.properties)
+- 의존성 추가 
+: JPA, Hibernate
+- 자동설정  
+: HibernateJpaAutoConfiguration
+.ddl-auto=validate (db의 ddl관계 확인해서 서버 올라갈때 에러처리 )
+
+EntityManagerFactoryBuilder가 등록되어있고
+Jpa를 사용하기위한 모든 것들이 자동 builder됨
+
+@PersistentContext를 가지고 EntityManager를 주입시킬 수 있음 
+
+
+build.gradle에 org.postgresql:postgresql 추가시 
+createClob에러 
+
+@Entity(name="어플리케이션안에서 쓰이는 이름)
+@Table(name="실제테이블) 사용안하면 @Entity안의 name그대로 
+
+@id를 
+primitive or refer type으로 쓸것이냐
+primitive는 새로만든 id가 0, db에 id 0 
+refer는 null이기 떄문에 구분 가능
+
+@GeneratedValue : 자동성생
+postgres는 sequence사용 sequence로 insert진행
+strategy는 
+
+@Entity란 뭔가
+@Value타입이란 뭔가 (아직 JPA아님) -> @Embeddable
+
+* 단방향 
+@ManyToOne으로 실행시 (Study에 Account가지고 있는 경우) 
+study에 foreignkey가 생성되거나 확안됨 
+관계에서의 주인은 study가 주인 : 관계에대한 entitiy를 study가 가지고있음
+
+@OneToMany (Account에 Study가지고 있는경우) 
+조인테이블 생성으로 테이블 세개로 생성됨 
+Account가 주인
+
+* 양방향 
+FK를 가지고있는 쪽이 주인 -> ManyToOne가지고 있는 쪽이 주인
+Accout에 List<Study>에 mappedby="owner"로 지정해줌 -> owner는 Study에 정의한 owner 
+
+-> Study에 양방향 정보 저장안해줬을때
+이상태때 accout.getStudies().add(study);
+이때 관계의 주인은 Study인데 account에다가 Study주입
+그때는 study테이블에 owner_id null
+-> 
+accout.getStudies().add(study);
+study.setOwner(owner);로 owner side에관계 설정
+
+Hibernate가 cache로 가지고 있는 상태 :  
+
+Session은 hibernate가 가지고 있는 api
+
+왜 spring.jpa.hibernate.ddl-auto=update 로 ~?
+
+1:n 단방향 : 1table, n테이블, join테이블로 만들어짐
+1:n n:1 : annotation자체로는 단방향 관계
+
+* 1:n, n:1 양방향 (foreignkey로 매핑됨)
+
+1) 1:n
+@OneToMany(mappedBy="code", fetch = FetchType.LAZY)
+private List<Mallinfo> mallinfoList; 
+
+mappedby 관계 owning관계 정의
+
+2) n:1
+
+@ManyToOne
+@JoinColumn(name="nationcd")
+private Country country;
+
+@ManyToOne(optional=false)
+@JoinColumn(name="malltp", referencedColumnName="cd")
+private Code code;
+
+주인: 관계 설정했을때 반영되는것 (foreignkey 가지고 있는 곳)
+
+account.getStudies().addStudy(study); //주는 study인데 데이터를 study에 넣음 이렇게하면 study에 owner_id안들어감
+study.setOwner(account); //필수 위에가 선택
+
+--------------------------------------------------------------------------------------------
+
+cascade 
+parent, child (ex post, comment관계)
+persist insert->insert
+remove delete->delete
+
+--------------------------------------------------------------------------------------------
+
+Fetch 모드
+Lazy, Eager
+
+--------------------------------------------------------------------------------------------
+
+@ToString시 1:n에서 n데이터 조회 주의
+
+@Configuration에 아래 annotation필요
+@EnableJpaRepositories -> JpaRepositoryRegisters는 Repository들을 자동등록
+EnableJpaRepositories -> Import -> ImportBeanDefinitionRegistrar 는 
+JpaRepository를 상속받는 Repository.class들을 찾아서 등록해줌
+
+--------------------------------------------------------------------------------------------
+
+@NoRepositoryBean
+repository bean을 extends 하니까 실제 bean이 아님을 표시
+
+--------------------------------------------------------------------------------------------
+
+Null 처리
+boardMstRepository.findById(bbsno).orElseThrow(
+	exception처리
+);
+
+--------------------------------------------------------------------------------------------
+
+EnableJpaRepositories.class -> queryLookupStrategy
+QueryLookupStrategy.class -> resolveQuery
+JpaQueryLookupStrategy 
+
+--------------------------------------------------------------------------------------------
+
+비동기 쿼리 메소드 ??????
+도메인이벤트 ??????
+
+--------------------------------------------------------------------------------------------
+
